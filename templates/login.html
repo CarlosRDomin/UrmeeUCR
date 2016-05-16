@@ -1,0 +1,29 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+	<title>Let's start!</title>
+	<meta name="author" content="Carlos Ruiz">
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+	<p>Hi, welcome to our experiment!</p>
+{#{% with messages = get_flashed_messages() %}#}
+{% if get_flashed_messages() %}
+	{% for message in get_flashed_messages() %} <p>{{ message|safe }}</p> {% endfor %}
+{% endif %}
+	<a href="javascript: login()"><p>Please <b>click here</b> to start when you're ready.</p></a>
+	<script>
+		function login() {
+			var form = document.createElement("form");
+			form.setAttribute("method", "POST");
+			form.setAttribute("action", "login");
+    		form.submit();
+		}
+	</script>
+</body>
+</html>

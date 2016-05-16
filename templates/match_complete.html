@@ -1,0 +1,24 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+	<title>Match against {{ enemy_name }} completed!</title>
+	<meta name="description" content="Match against {{ enemy_name }} completed!">
+	<meta name="author" content="Carlos Ruiz">
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+	<p>You and your opponent agreed on a price of ${{ final_offer }}!<br>
+		{% if profit > 0 %}
+			<strong>Congratulations</strong>, you earned <strong>${{profit}}</strong>! :)
+		{% else %}
+			<strong>Sorry</strong>, you weren't able to make any profit this match :(
+		{% endif %}
+	</p>
+	<p>When you're ready for your next match,<br><a href="new_match"><b>click here</b> to wait for a new opponent.</a></p>
+</body>
+</html>
