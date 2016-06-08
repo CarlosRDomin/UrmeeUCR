@@ -1,0 +1,37 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+	<title>Match completed!</title>
+	<meta name="author" content="Carlos Ruiz">
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+{% set final_offer = role.match.offers[1].offer_value %}
+{% if role.is_seller %}
+	{% set profit = final_offer - role.valuation %}
+{% else %}
+	{% set profit = role.valuation - final_offer %}
+{% endif %}
+
+<body>
+	<p>You and your opponent agreed on a price of ${{ final_offer }}!<br>
+		{% if profit > 0 %}
+			<strong>Congratulations</strong>, you earned <strong>${{profit}}</strong>! :)
+		{% else %}
+			<strong>Sorry</strong>, you weren't able to make any profit this match :(
+		{% endif %}
+	</p>
+	<p>When you're ready for your next match,<br><a href="javascript: complete_match()"><b>click here</b> to wait for a new opponent.</a></p>
+	<script>
+		function complete_match() {
+			var form = document.createElement("form");
+			form.setAttribute("method", "POST");
+    		form.submit();
+		}
+	</script>
+</body>
+</html>

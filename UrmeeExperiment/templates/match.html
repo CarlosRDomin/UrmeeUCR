@@ -1,0 +1,124 @@
+<!doctype html>
+
+<html lang="en">
+{#<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>#}
+<script>window.angular || document.write('<script src="lib/angular/angular.min.js"><\/script>')</script>
+<head>
+    <meta charset="utf-8">
+
+    <title>You've been matched!</title>
+    <meta name="author" content="Carlos Ruiz">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body ng-app="myApp" ng-controller="myCtrl">
+
+    <p id="task_description">
+        {% if role.is_seller %}   You're trying to <b>sell</b> an item that you value in <b>${{ role.valuation }}</b>.<br><br>At the end of the experiment you'll get paid proportionally to the difference<br>between the price you agree on and the value of this item.<br><br>For every round that passes without reaching an agreement,<br>a multiplicative fee of {{ INTEREST_PER_ROUND }}% will be deducted from your potential profit.
+        {% else %}              You're trying to <b>buy</b> an item that you value in <b>${{ role.valuation }}</b>.<br><br>At the end of the experiment you'll get paid proportionally to the difference<br>between the value of this item and the price you agree on.<br><br>For every round that passes without reaching an agreement,<br>a multiplicative fee of {{ INTEREST_PER_ROUND }}% will be deducted from your potential profit.
+        {% endif %}
+    </p>
+
+	<form method="POST" action="" target="_self">
+		<div ng-show="negotiation_round == 0">
+		{% if role.starts_first %}
+			<p>You've been randomly selected to make the first offer!<br>
+				<input type="range" {{ get_offer_range(role.is_seller, role.valuation)|safe }} title="Make the first offer" ng-model="offer_value" ng-change="to_num()" id="first_offer_slider" ng-disabled="negotiation_round > 0">
+				<input type="number" {{ get_offer_range(role.is_seller, role.valuation)|safe }} title="Make the first offer" ng-model="offer_value" name="offer_value" id="first_offer_num_picker" placeholder="{{ role.valuation }}" ng-disabled="negotiation_round > 0">
+				<input type="hidden" value="decline" name="offer_option" id="first_offer_option" ng-disabled="negotiation_round > 0">
+				<input type="submit" title="Submit offer" value="Submit offer" id="submit_first_offer" ng-disabled="negotiation_round > 0">
+			</p>
+		{% else %}
+			<p>Your opponent has been randomly selected to make the first offer.<br>Please wait until their initial offer is received.</p>
+			<p><img src="{{ url_for('static', filename='images/loading_spinner.gif') }}" loop="infinite" alt="" width="32" height="32" title="Waiting for an offer... Please wait :)"/></p>
+		{% endif %}
+		</div>
+
+		<div ng-show="negotiation_round > 0">
+			<div ng-show="{{ get_condition_show_waiting_for_offer(role) }}">
+				<p>Your opponent has received your offer.<br>Please wait until they reply.</p>
+				<p><img src="{{ url_for('static', filename='images/loading_spinner.gif') }}" loop="infinite" alt="" width="32" height="32" title="Waiting for an offer... Please wait :)"/></p>
+			</div>
+			<div ng-show="!{{ get_condition_show_waiting_for_offer(role) }}">
+				<p id="offer_in_description">Your opponent sent you a new offer! They're willing to {% if role.is_seller %}buy{% else %}sell{% endif %} for <b ng-bind="'$' + offer_in"></b>.</p>
+				<p>What do you want to do?<br>
+				<table width="600" border="1" align="center">
+					<tr>
+						<td width="50%"><label><p>
+							<input type="radio" value="accept" checked name="offer_option" id="offer_accept" ng-disabled="{{ get_condition_show_waiting_for_offer(role) }}">
+							Accept their offer :)
+						</p></label></td>
+						<td width="50%"><label><p>
+							<input type="radio" value="decline" name="offer_option" id="offer_decline" ng-disabled="{{ get_condition_show_waiting_for_offer(role) }}">
+							Make a new offer:<br>
+							<input type="range" {{ get_offer_range(role.is_seller, role.valuation)|safe }} title="Make a counteroffer" onmousedown="check_new_offer_ratio()" ng-model="offer_value" ng-change="to_num()" id="offer_slider" ng-disabled="{{ get_condition_show_waiting_for_offer(role) }}">
+							<input type="number" {{ get_offer_range(role.is_seller, role.valuation)|safe }} title="Make a counteroffer" onmousedown="check_new_offer_ratio()" ng-model="offer_value" name="offer_value" id="offer_num_picker" ng-disabled="{{ get_condition_show_waiting_for_offer(role) }}">
+						</p></label></td>
+					</tr>
+					<tr>
+						<td colspan="2" width="100%"><p id="profit_explanation"></p></td>
+					</tr>
+				</table>
+				<input type="submit" title="Submit offer" value="Submit offer" id="submit_offer" ng-disabled="{{ get_condition_show_waiting_for_offer(role) }}">
+				</p>
+			</div>
+		</div>
+	</form>
+{#	<iframe name="iframe_background" src="offer_progress" width="0" height="0" scrolling="no" style="visibility: hidden; display: none" seamless="seamless"></iframe>#}
+
+    <script language="javascript">
+        function check_new_offer_ratio() {
+            document.getElementById("offer_decline").checked = true;
+            update_profit_explanation(null);
+        }
+
+        function update_profit_explanation(event) {
+            if (event && this.id.indexOf("accept")>=0) {
+                document.getElementById("profit_explanation").innerHTML = "By accepting your opponent's offer, you would";
+            } else {    // Decline
+                document.getElementById("profit_explanation").innerHTML = "Decline!";
+            }
+        }
+
+        for (var i=0; i<document.getElementsByName("offer_option").length; i++) {
+            document.getElementsByName("offer_option")[i].onchange = update_profit_explanation;
+        }
+
+        var app = angular.module('myApp', []);
+        app.controller('myCtrl', function($scope, $http, $timeout) {
+			$scope.negotiation_round = {{ role.match.offers|length }};
+			$scope.offer_in = null;
+			$scope.offer_value = {{ role.valuation }};
+            $scope.to_num = function () {
+                $scope.offer_value = parseFloat($scope.offer_value);
+            };
+
+			(function poll_server() {
+				$http.get('/last_offer_info').then(function successCallback(response) {
+					$scope.negotiation_round = response.data.count;
+					$scope.offer_in = response.data.offer;
+					if ($scope.offer_in == 0) window.location = "";
+				}, null /* No error handler */);
+				$timeout(poll_server, {{ POLL_REFRESH_RATE }});	// Keep polling every POLL_REFRESH_RATE ms
+			})();
+
+			/*window.updateOffer = function (offer_in, offer_in_accept) {
+				if (offer_in_accept) {
+					window.location = "match_complete"
+				} else {
+					if (offer_in>0 && $scope.offer_in==0) {
+						$scope.$apply(function () {
+							$scope.negotiation_round++;
+							$scope.negotiation_round_changed();
+						});
+					}
+					$scope.$apply(function () {
+						$scope.offer_in = offer_in;
+					});
+				}
+			};*/
+        });
+    </script>
+</body>
+</html>

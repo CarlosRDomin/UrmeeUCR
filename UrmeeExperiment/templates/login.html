@@ -1,6 +1,8 @@
 <!doctype html>
 
 <html lang="en">
+{#<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>#}
+<script>window.angular || document.write('<script src="lib/angular/angular.min.js"><\/script>')</script>
 <head>
 	<meta charset="utf-8">
 
@@ -12,7 +14,6 @@
 
 <body>
 	<p>Hi, welcome to our experiment!</p>
-{#{% with messages = get_flashed_messages() %}#}
 {% if get_flashed_messages() %}
 	{% for message in get_flashed_messages() %} <p>{{ message|safe }}</p> {% endfor %}
 {% endif %}
@@ -21,7 +22,6 @@
 		function login() {
 			var form = document.createElement("form");
 			form.setAttribute("method", "POST");
-			form.setAttribute("action", "login");
     		form.submit();
 		}
 	</script>

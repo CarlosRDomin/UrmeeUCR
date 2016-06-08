@@ -1,11 +1,12 @@
 <!doctype html>
 
 <html lang="en">
-<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script><script>window.angular || document.write('<script src="js/angular.min.js"><\/script>')</script>
+{#<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>#}
+<script>window.angular || document.write('<script src="lib/angular/angular.min.js"><\/script>')</script>
 <head>
 	<meta charset="utf-8">
 
-	<title>Waiting for an opponent</title>
+	<title>Waiting for an opponent...</title>
 	<meta name="author" content="Carlos Ruiz">
 
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
@@ -16,21 +17,24 @@
 		<progress max="{{ NUMBER_OF_USERS }}" style="width: 250px; height: 20px;" ng-value="prog"></progress><span style="position: absolute; left: 0; width: 100%;"><b style="line-height: 20px" ng-bind="prog_int + '%'"></b></span><br>
 		<span ng-bind="'(' + prog + ' out of {{ NUMBER_OF_USERS }} users ready)'"></span></p>
 	<p><img src="{{ url_for('static', filename='images/loading_spinner.gif') }}" loop="infinite" alt="" width="32" height="32" title="Waiting for a match... Please wait :)"/></p>
-	<iframe src="wait_progress" width="0" height="0" scrolling="no" style="visibility: hidden; display: none" seamless="seamless"></iframe>
 	<script language="javascript">
 		var app = angular.module('myApp', []);
-		app.controller('myCtrl', function($scope) {
+		app.controller('myCtrl', function($scope, $http, $timeout) {
 			$scope.prog = 0;
 			$scope.prog_int = 0;
-			window.updateProg = function (p, redir) {
-				$scope.$apply(function () {
-					$scope.prog = p;
-					$scope.prog_int = parseInt(100*p/{{ NUMBER_OF_USERS }});
-					if (redir || p>={{ NUMBER_OF_USERS }}) {
-						window.location = "match";
+
+			(function poll_server() {
+				$http.get('/wait_cnt').then(function successCallback(response) {
+					$scope.prog = parseInt(response.data);
+					$scope.prog_int = parseInt(100*$scope.prog/{{ NUMBER_OF_USERS }});
+				}, null /* No error handler */);
+				$http.get('/user_state').then(function successCallback(response) {
+					if (response.data != "{{ States.wait.value }}") {
+						window.location = window.location.href;
 					}
-				});
-			};
+				}, null /* No error handler */);
+				$timeout(poll_server, {{ POLL_REFRESH_RATE }});	// Keep polling every POLL_REFRESH_RATE ms
+			})();
 		});
 	</script>
 </body>

@@ -1,12 +1,11 @@
 import random
 # import sqlite3
 from flask import Flask, send_from_directory, request, session, g, redirect, url_for, abort, render_template, flash
-from flask_settings import PORT
+from settings import PORT
 import template_functions
 
 
 class User:
-
     COMPUTER = "COMPUTER"
     NOBODY = ""
 
@@ -21,8 +20,8 @@ class User:
         self.profit = 0
         self.deal_accepted = False
 
-    def __contains__(self, item):
-        return (self.ip == item.ip) if isinstance(item, self.__class__) else False
+    def __hash__(self):
+        return hash(self.ip)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -33,7 +32,7 @@ class User:
             return False
 
 
-class UserList(list):
+class UserList(set):
     def __init__(self):
         self.cnt_waiting = 0
 
@@ -69,7 +68,6 @@ class UserList(list):
             self[i].deal_accepted = False
             self[i+1].deal_accepted = False
 
-
     def refresh_cnt(self):
         cnt_waiting = 0
         for i in self:
@@ -85,7 +83,7 @@ NUMBER_OF_USERS = 2
 INTEREST_PER_ROUND = 5  # (in %)
 
 app = Flask(__name__, static_url_path='')
-app.config.from_object("flask_settings")  # Looks at the given object (if it's a string it will import it) and then look for all uppercase variables defined there
+app.config.from_object("settings")  # Looks at the given object (if it's a string it will import it) and then look for all uppercase variables defined there
 app.config.from_envvar('FLASKR_SETTINGS', silent=True)  # Environment variable FLASKR_SETTINGS can be set to specify a config file to be loaded, which would override the default values (silent switch just tells Flask to not complain if no such environment key is set)
 
 # For every function in template_functions, add a jinja global variable named after the function that points to the function.
@@ -143,26 +141,26 @@ def wait_progress():
 @app.route('/match', methods=['GET'])
 def match():
     # if request.method == 'POST':
-        # offer_out_accept = (request.args.get('offer_out_option', 'decline') == 'accept')
-        # offer_out = float(request.args.get('offer_out_value', 20))
-        #
-        # if offer_out_accept:
-        #     return redirect(url_for('match_complete', profit=(offer_out-20)))
+    # offer_out_accept = (request.args.get('offer_out_option', 'decline') == 'accept')
+    # offer_out = float(request.args.get('offer_out_value', 20))
+    #
+    # if offer_out_accept:
+    #     return redirect(url_for('match_complete', profit=(offer_out-20)))
 
 
-        # if offer_in_accept:
-        #     return redirect(url_for('match_complete', is_seller=request.form["is_seller"], profit=profit, offer_in_value=offer_in_value, valuation=request.form["valuation"]))
-        # else:
-        #     return render_template("match.html", is_seller=request.form["is_seller"], valuation=request.form["valuation"], offer_in="")
+    # if offer_in_accept:
+    #     return redirect(url_for('match_complete', is_seller=request.form["is_seller"], profit=profit, offer_in_value=offer_in_value, valuation=request.form["valuation"]))
+    # else:
+    #     return render_template("match.html", is_seller=request.form["is_seller"], valuation=request.form["valuation"], offer_in="")
     # else:  # request.method == 'GET'
-        u = userList.get_user(request.remote_addr)
-        if u is None:  # If user is not found, take him back to the start
-            flash("An error occurred when trying to access the page 'match'.<br>The system doesn't recognize your login credentials,<br>please login again to return to the experiment.")
-            return redirect(url_for('login'))
+    u = userList.get_user(request.remote_addr)
+    if u is None:  # If user is not found, take him back to the start
+        flash("An error occurred when trying to access the page 'match'.<br>The system doesn't recognize your login credentials,<br>please login again to return to the experiment.")
+        return redirect(url_for('login'))
 
-        u.waiting = False
-        userList.refresh_cnt()
-        return render_template("match.html", is_seller=u.is_seller, valuation=u.valuation, starts_first=u.starts_first)
+    u.waiting = False
+    userList.refresh_cnt()
+    return render_template("match.html", is_seller=u.is_seller, valuation=u.valuation, starts_first=u.starts_first)
 
 @app.route('/offer', methods=['POST'])
 def offer():
@@ -212,10 +210,6 @@ def match_complete():
 @app.route('/new_match', methods=['GET'])
 def new_match():
     return redirect(url_for('wait'))
-
-
-# def connect_db():
-#     return sqlite3.connect(app.config['DATABASE'])
 
 
 if __name__ == '__main__':

@@ -1,0 +1,2 @@
+NUMBER_OF_USERS = 2
+INTEREST_PER_ROUND = 5  # (in %)
