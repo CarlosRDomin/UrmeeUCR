@@ -1,14 +1,8 @@
-
-from UrmeeExperiment import app
-# from UrmeeExperiment.models import States
 from enum import Enum
 from flask_sqlalchemy import SQLAlchemy
 from flask_restless import APIManager
 from flask.json import JSONEncoder
-
-db = SQLAlchemy(app)
-
-api_manager = APIManager(app, flask_sqlalchemy_db=db)
+from BargainingExperiment.src import app
 
 
 class CustomEnumJSONEncoder(JSONEncoder):
@@ -23,4 +17,7 @@ class CustomEnumJSONEncoder(JSONEncoder):
             return list(iterable)
         return JSONEncoder.default(self, obj)
 
+
+db = SQLAlchemy(app)
 app.json_encoder = CustomEnumJSONEncoder
+api_manager = APIManager(app, flask_sqlalchemy_db=db)

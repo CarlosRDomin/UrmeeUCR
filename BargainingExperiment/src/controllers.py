@@ -1,13 +1,12 @@
-from flask import request, escape, render_template, url_for, redirect, flash, jsonify
-
-from UrmeeExperiment import app
-from UrmeeExperiment import template_functions
-from UrmeeExperiment.models import *
-from UrmeeExperiment.settings import POLL_REFRESH_RATE
-
+from flask import request, render_template, url_for, redirect, jsonify
+from BargainingExperiment.src import app
+from BargainingExperiment.src import template_functions
+from BargainingExperiment.src.app_settings import POLL_REFRESH_RATE
+from BargainingExperiment.src.models import *
+from BargainingExperiment.config.experiment_settings import *
 
 # API
-# from UrmeeExperiment.core import api_manager
+# from BargainingExperiment.src.core import api_manager
 # api_manager.create_api(User, methods=['GET'])
 # api_manager.create_api(Role, methods=['GET'])
 # api_manager.create_api(Match, methods=['GET'])
@@ -123,44 +122,3 @@ def process_match_complete(u):
 
 def serve_match_complete(u):
 	return render_template("match_complete.html", role=u.roles.first())
-
-
-
-
-
-
-@app.route('/prueba')
-def prueba():
-	test = ExperimentUser(request.remote_addr)
-	db.session.add(test.user_info)
-	db.session.commit()
-	return escape("{}".format(test.user_info))
-
-@app.route('/get')
-def get_prueba():
-	return str(escape("; ".join(str(x) for x in User.query.all()))).replace("; ", "<br>")
-
-@app.route('/prueba2')
-def prueba2():
-	import random
-	random.seed(100)
-	a = ExperimentUserSet()
-	for x in User.query.filter_by(experiment_day=ExperimentUser.computer_user.experiment_day).all():
-		a.add(x.ip)
-	a.add("192.168.0.1")
-	a.add("192.168.0.2")
-	if len(a) % 2 == 1:
-		a.add("ey.{}".format(len(a)))
-
-	print a
-	print a.get_user(request.remote_addr)
-	print a.random_combination()
-	print a.random_combination()
-	print a.random_combination()
-	a.refresh_cnt()
-
-	return str(escape("; ".join(str(x) for x in Role.query.all()))).replace("; ", "<br>")
-
-@app.route('/get2')
-def get_prueba2():
-	return str(escape("; ".join(str(x) for x in Match.query.all()))).replace("; ", "<br>")

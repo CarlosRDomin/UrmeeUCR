@@ -1,7 +1,7 @@
-from UrmeeExperiment.core import db
-from UrmeeExperiment.settings import SQLALCHEMY_DATABASE_URI
 import argparse
 import warnings
+from BargainingExperiment.config.db_settings import SQLALCHEMY_DATABASE_URI
+from BargainingExperiment.src.core import db
 
 
 def create_db():

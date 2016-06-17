@@ -1,9 +1,0 @@
-from flask import Flask
-
-
-app = Flask(__name__, static_url_path='')
-app.config.from_object('UrmeeExperiment.settings')
-
-import UrmeeExperiment.core
-import UrmeeExperiment.models
-import UrmeeExperiment.controllers
