@@ -1,3 +1,4 @@
+import update_sys_path
 from BargainingExperiment.src import app
 from BargainingExperiment.src.app_settings import PORT
 from BargainingExperiment.src.models import new_experiment_day

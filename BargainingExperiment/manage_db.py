@@ -1,6 +1,7 @@
+import update_sys_path
 import argparse
 import warnings
-from BargainingExperiment.config.db_settings import SQLALCHEMY_DATABASE_URI
+from BargainingExperiment.src.app_settings import SQLALCHEMY_DATABASE_URI
 from BargainingExperiment.src.core import db
 
 

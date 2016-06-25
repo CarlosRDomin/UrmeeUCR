@@ -1,21 +1,11 @@
 (Unfortunately I don't have a Windows machine available so I can't verify all these steps, I'll try my best with the help of Google)
-1. Download and install MySQL (latest version as of June 7th 2016 is 5.7.13):
-	Instructions extracted from here: http://dev.mysql.com/doc/refman/5.7/en/windows-installation.html
-	Simply download the MSI installer (http://dev.mysql.com/get/Downloads/MySQLInstaller/mysql-installer-community-5.7.13.0.msi) and follow the installation steps.
 
-2. Create a MySQL user for the database:
-	Among other things, MySQLWorkbench should have been installed in the previous step. Find it in the Start Menu and open it.
-	On a black screen, a popup item should read "Local instance <number>". Click on it to connect.
-	On the left menu, under MANAGEMENT, click on Users and Privileges. Then, on the "Add account" button on the bottom left corner. Fill out the fields (on the Login tab):
-		Login name: Urmee
-		Limit to Hosts Matching: localhost
-		Password: UCRexperiment.1
-	Under the Administrative Roles tab, check the following boxes:
-		DBManager (which will also activate DBDesigner and Backup Admin) from the main list
-		REFERENCES from the right list
-	Finally, click on the "Apply" button on the bottom right corner.
+1. @Bill, make sure our user (urmeek, or whichever username you chose) has the following "Administrative Roles" rights:
+	Roles: DBManager, DBDesigner and BackupAdmin (in fact selecting DBManager should automatically activate the other two).
+	This should give us all rights we need except for one, namely the Global Privilege "REFERENCES", please activate it so my code can correctly create all db tables.
+	Here's a list of all Global Privileges I've tested it with: ALTER, ALTER ROUTINE, CREATE, CREATE ROUTINE, CREATE TEMPORARY TABLES, CREATE VIEW, DELETE, DROP, EVENT, GRANT OPTION, INDEX, INSERT, LOCK TABLES, REFERENCES, SELECT, SHOW DATABASES, SHOW VIEW, TRIGGER, UPDATE.
 
-3. Download and install python 2.7:
+2. Download and install python 2.7:
 	All available versions can be found here: https://www.python.org/downloads/release/python-2711/
 	Since the lab computer seems to run windows, I'd find out if the microprocessor is 32 or 64 bit (probably 64) and download the appropriate link:
 		- 64-bit Windows: https://www.python.org/ftp/python/2.7.11/python-2.7.11.amd64.msi
@@ -23,33 +13,41 @@
 		- Note: in order to find out if your windows is 32 or 64 bit, this is what Google says: "To find out if your computer is running a 32-bit or 64-bit version of Windows in Windows 7 or Windows Vista, do the following: Open System by clicking the Start button , right-clicking Computer, and then clicking Properties. Under System, you can view the system type".
 		- Note 2: Found this tutorial online (http://docs.python-guide.org/en/latest/starting/install/win/) that seems to be a good guide on how to setup Python, if I don't explain something correctly, that might help you.
 
-4. Configure the PATH environment variable:
+3. Configure the PATH environment variable:
 	According to the tutorial mentioned in Note 2 above, you can do this easily by running the following in PowerShell (Click on the Start Menu logo in the bottom left corner of the screen -> Type "PowerShell" on the search bar -> Right click -> Run as administrator):
 		[Environment]::SetEnvironmentVariable("Path", "$env:Path;C:\Python27\;C:\Python27\Scripts\", "User")
 
-5. Install PIP utility (which allows to install other libraries):
+4. Install PIP utility (which allows to install other libraries):
 	Download this script: https://bootstrap.pypa.io/get-pip.py
 	Then, should be as easy as double-clicking on the file "get-pip.py" you just downloaded.
 	Otherwise, you could manually run it by opening the Python app (should be an icon somewhere in the Start Menu -> Python), opening the script and executing it.
 
-6. Download my code:
+5. Download my code:
 	Download the latest version from: https://github.com/CarlosRDomin/UrmeeUCR/archive/master.zip
 	EXTRACT the zip file into a folder of your choosing, and open the folder.
 
-7. Install dependencies:
+6. Install dependencies:
 	Open a command prompt (Start Menu -> (in the search bar type) cmd), navigate to the folder where the .zip was extracted and execute:
 		pip install -r requirements.txt
 	This should automatically install all the dependencies and libraries the code needs to run
 
-8. Run my script:
+7. Run my script:
 	Open the folder where the .zip was extracted and execute (double-click) the file "run_server.py"
 	And the server should be running! In order to stop it, close the window or press Ctrl + C (or Ctrl + D, not sure on Windows)
-	Note: you can configure different server parameters by modifying the file UrmeeExperiment/experiment_settings.py:
+	
+Different server parameters can be configured by modifying the files in the folder BargainingExperiment/config:
+	db_settings.py (@Bill these are for you. I used the values you sent in an email, feel free to modify with any updated values):
+		SQLALCHEMY_DATABASE_USER: username to use when connecting to the MySQL server.
+		SQLALCHEMY_DATABASE_PASS: password to use when connecting to the MySQL server.
+		SQLALCHEMY_DATABASE_NAME: name of the db schema we have access to within the MySQL server.
+		SQLALCHEMY_DATABASE_SERVER: address of the MySQL server.
+	experiment_settings.py (@Urmee these are for you):
 		NUMBER_OF_USERS: this number indicates the total number of users that will be participating in the experiment, and that the server will wait for before starting the first match.
 		INTEREST_PER_ROUND: (not used yet by my code, but ready for next iteration) indicates the interest applied to the profit a user would obtain for closing a deal over their valuation.
-	Note that you should modify the settings BEFORE executing the server!
+	
+Note: you should modify the settings BEFORE executing the server for them to take effect.
 
-9. Test the server:
+8. Test the server:
 	In order to connect to it (as if you were a user doing the experiment), you need to find out the local IP address of the lab computer acting as the server. We can do this by opening a terminal (Start Menu -> (search bar) cmd) and typing "ipconfig" (and press Enter).
 	A bunch of information will come out, but there should be a line saying "IPv4 Address". The number across from it is your local IP address. Typical examples of local IPs to look for are: "192.168.0.x", "192.168.1.x", "10.0.0.x", "172.16.0.x", etc.
 	Once you find it, simply open Google Chrome in any lab computer (including the server itself, should also work there), and type the following URL: "localIP:5000" (eg: 192.168.0.5:5000). Then just follow the instructions on the screen on how to "play" our experiment :D
