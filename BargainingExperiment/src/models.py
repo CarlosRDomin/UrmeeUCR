@@ -13,7 +13,7 @@ class States(Enum):
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	login_date = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+	login_date = db.Column(db.DateTime, nullable=False, default=db.func.now())
 	experiment_day = db.Column(db.Integer, nullable=False)
 	ip = db.Column(db.String(15), nullable=False)
 	state = db.Column(EnumType(States), nullable=False, default=States.login)
@@ -36,7 +36,7 @@ class User(db.Model):
 
 class Role(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	role_date = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+	role_date = db.Column(db.DateTime, nullable=False, default=db.func.now())
 	user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 	starts_first = db.Column(db.Boolean, nullable=False)
 	is_seller = db.Column(db.Boolean, nullable=False)
@@ -58,7 +58,7 @@ class Role(db.Model):
 
 class Match(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	match_date = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+	match_date = db.Column(db.DateTime, nullable=False, default=db.func.now())
 	role_1_id = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False, unique=True, index=True)
 	role_2_id = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False, unique=True, index=True)
 	roles = db.relationship("Role", backref=db.backref("match", uselist=False), primaryjoin=db.or_(Role.id==role_1_id, Role.id==role_2_id), uselist=True)
@@ -79,7 +79,7 @@ class Match(db.Model):
 
 class Offer(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	offer_date = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+	offer_date = db.Column(db.DateTime, nullable=False, default=db.func.now())
 	match_id = db.Column(db.Integer, db.ForeignKey("match.id"), nullable=False)
 	offer_by = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False)
 	offer_value = db.Column(db.Float, nullable=False)
