@@ -1,0 +1,24 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+	<title>Experiment completed!</title>
+	<meta name="author" content="Carlos Ruiz">
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+	{%  if user_quit %}
+		<p>You decided to quit before the end of the experiment, so you can leave now.<br>
+			Thank you for participating!
+		</p>
+	{% else %}
+		<p>This is the end of the experiment, thank you for participating!<br>
+			<strong>Congratulations</strong>, you earned <strong>$XX.XX</strong>! :)
+		</p>
+	{% endif %}
+</body>
+</html>

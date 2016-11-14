@@ -9,11 +9,38 @@ class States(Enum):
 	wait = "wait"
 	match = "match"
 	match_complete = "match_complete"
+	experiment_complete = "experiment_complete"
+
+
+class UserType(Enum):
+	computer = 0
+	users = 1
+
+COMPUTER = UserType.computer
+USERS = UserType.users
+
+
+class StartingRole(Enum):
+	buyer = 0
+	seller = 1
+	random = 2
+
+BUYER_FIRST = StartingRole.buyer
+SELLER_FIRST = StartingRole.seller
+RANDOM_FIRST = StartingRole.random
+
+SELLER_LOW	= 0
+BUYER_LOW	= 1
+SELLER_HIGH	= 2
+BUYER_HIGH	= 3
+
+import BargainingExperiment.config.experiment_settings as EXPERIMENT_SETTS  # Need to import experiment_settings after the enums above have been defined (so they can be used in the settings file)
 
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	login_date = db.Column(db.DateTime, nullable=False, default=db.func.now())
+	quit_date = db.Column(db.DateTime, nullable=True, default=None)
 	experiment_day = db.Column(db.Integer, nullable=False)
 	ip = db.Column(db.String(15), nullable=False)
 	state = db.Column(EnumType(States), nullable=False, default=States.login)
@@ -31,7 +58,13 @@ class User(db.Model):
 			self.login_date = login_date
 
 	def __repr__(self):
-		return "<User {}-{}>".format(self.ip, self.experiment_day)
+		return "<User {} (day {}) | Role: {} | State: {}>".format(self.ip, self.experiment_day,
+				"No roles yet" if self.roles.count()==0 else "Seller" if self.roles.first().is_seller else "Buyer",
+				self.state.name if self.quit_date is None else "quit at {}".format(self.quit_date))
+
+	@staticmethod
+	def get_computer_user():
+		return User.query.filter(User.experiment_day==User.TODAYS_EXPERIMENT_DAY, User.ip==User.COMPUTER_IP).first()
 
 
 class Role(db.Model):
@@ -46,9 +79,9 @@ class Role(db.Model):
 
 	def __init__(self, user_id, starts_first=None, is_seller=None, valuation=0, role_date=None):
 		self.user_id = user_id
-		self.starts_first = starts_first if starts_first is not None else (random.random() > 0.5)
 		self.is_seller = is_seller if is_seller is not None else (random.random() > 0.5)
-		self.valuation = valuation if valuation > 0 else (50 if self.is_seller else 60)
+		self.starts_first = starts_first if starts_first is not None else self.is_seller if EXPERIMENT_SETTS.MATCH_STARTED_BY==SELLER_FIRST else not self.is_seller if EXPERIMENT_SETTS.MATCH_STARTED_BY==BUYER_FIRST else (random.random() > 0.5)
+		self.valuation = valuation if valuation > 0 else EXPERIMENT_SETTS.VALUATION_SET[int(not self.is_seller) + 2*(random.random() > (EXPERIMENT_SETTS.PROB_SELLER_LOW if self.is_seller else EXPERIMENT_SETTS.PROB_BUYER_LOW))]
 		if role_date is not None:
 			self.role_date = role_date
 
@@ -63,18 +96,22 @@ class Match(db.Model):
 	role_2_id = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False, unique=True, index=True)
 	roles = db.relationship("Role", backref=db.backref("match", uselist=False), primaryjoin=db.or_(Role.id==role_1_id, Role.id==role_2_id), uselist=True)
 	offers = db.relationship("Offer", backref=db.backref("match", uselist=False), order_by="Offer.offer_date.desc()", uselist=True)
+	completed = db.Column(db.Boolean, nullable=False)
+	db.Index("match_date_idx", match_date)
+	db.Index("completed_idx", completed)
 	# db.Index("role_match_ids", role_1_id, role_2_id)
 	# db.Index("role_1_idx", role_1_id)
 	# db.Index("role_2_idx", role_2_id)
 
-	def __init__(self, role_1_id, role_2_id, match_date=None):
+	def __init__(self, role_1_id, role_2_id, match_date=None, completed=False):
 		self.role_1_id = role_1_id
 		self.role_2_id = role_2_id
+		self.completed = completed
 		if match_date is not None:
 			self.match_date = match_date
 
 	def __repr__(self):
-		return "<Match {} - {}>".format(self.role_1_id, self.role_2_id)
+		return "<Match {} - {}; Completed: {}>".format(self.role_1_id, self.role_2_id, self.completed)
 
 
 class Offer(db.Model):
@@ -83,6 +120,7 @@ class Offer(db.Model):
 	match_id = db.Column(db.Integer, db.ForeignKey("match.id"), nullable=False)
 	offer_by = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False)
 	offer_value = db.Column(db.Float, nullable=False)
+	db.Index("offer_value_idx", offer_value)
 
 	def __init__(self, match_id, offer_by, offer_value, offer_date=None):
 		self.match_id = match_id
@@ -93,87 +131,6 @@ class Offer(db.Model):
 
 	def __repr__(self):
 		return "<Offer in match {} by {}: ${}>".format(self.match_id, self.offer_by, self.offer_value)
-
-
-# class ExperimentUser:
-# 	computer_user = None
-# 	COMPUTER_IP = "Computer"
-#
-# 	def __init__(self, ip=COMPUTER_IP):
-# 		self.user_info = User.query.filter_by(ip=ip, experiment_day=ExperimentUser.computer_user.experiment_day).first()
-# 		if self.user_info is None:
-# 			self.user_info = User(ip, self.computer_user.experiment_day)
-# 			db.session.add(self.user_info)
-# 			db.session.commit()
-# 		self.role_info = Role(self.user_info.id)  # Default role values
-# 		self.match_info = None  # Not matched yet
-# 		self.waiting = True
-# 		self.opponent_offer = 0
-# 		self.profit = 0
-# 		self.deal_accepted = False
-#
-# 	def __repr__(self):
-# 		return "[{}, {}, {}]".format(self.user_info, self.role_info, self.match_info)
-#
-# 	def __hash__(self):
-# 		return hash(self.user_info.ip)
-#
-# 	def __eq__(self, other):
-# 		if isinstance(other, self.__class__):
-# 			return self.user_info.ip == other.user_info.ip
-# 		elif isinstance(other, str):
-# 			return self.user_info.ip == other
-# 		else:
-# 			return False
-#
-#
-# class ExperimentUserSet(set):
-# 	def __init__(self):
-# 		super(ExperimentUserSet, self).__init__()
-# 		self.cnt_waiting = 0
-#
-# 	def add(self, *args, **kwargs):
-# 		super(ExperimentUserSet, self).add(args[0] if isinstance(args[0], ExperimentUser) else ExperimentUser(args[0]))
-#
-# 	def get_user(self, u):
-# 		# Note: self & set([u]) returns u (with its properties). In order to retrieve the object in self with matching ip as u,
-# 		# we first compute (self-u)=(all elements in self except for u) and then do (self-that)=(u)
-# 		try:
-# 			user = (self - (self - {u})).pop()
-# 			return user
-# 		except KeyError:  # If not found, pop() will try to remove an item on an empty set -> Return None
-# 			return None
-#
-# 	def random_combination(self):  # From http://docs.python.org/2/library/itertools.html#recipes
-# 		l = list(self)
-# 		random.shuffle(l)
-# 		for i in range(0, len(l), 2):
-# 			l[i].role_info = Role(l[i].user_info.id, (random.random() > 0.5), (random.random() > 0.5), 50)
-# 			l[i+1].role_info = Role(l[i+1].user_info.id, not l[i].role_info.starts_first, not l[i].role_info.is_seller, 60)
-# 			db.session.add(l[i].role_info)
-# 			db.session.add(l[i+1].role_info)
-# 			db.session.commit()
-#
-# 			match = Match(l[i].role_info.id, l[i+1].role_info.id)
-# 			l[i].match_info = match
-# 			l[i+1].match_info = match
-# 			db.session.add(match)
-# 			db.session.commit()
-#
-# 			l[i].opponent_offer = l[i+1].opponent_offer = 0
-# 			l[i].profit = l[i+1].profit = 0
-# 			l[i].deal_accepted = l[i+1].deal_accepted = False
-# 		return self
-#
-# 	def refresh_cnt(self):
-# 		cnt_waiting = 0
-# 		for i in self:
-# 			if i.waiting:
-# 				cnt_waiting += 1
-# 		self.cnt_waiting = cnt_waiting
-#
-# 		if self.cnt_waiting >= NUMBER_OF_USERS:  # Make random matches
-# 			self.random_combination()
 
 
 def new_experiment_day():
@@ -193,3 +150,11 @@ def new_experiment_day():
 	db.session.add(User(experiment_day=experiment_day, waiting=False))
 	db.session.commit()
 	User.TODAYS_EXPERIMENT_DAY = experiment_day
+
+
+# API
+# from BargainingExperiment.src.core import api_manager
+# api_manager.create_api(User, methods=['GET'])
+# api_manager.create_api(Role, methods=['GET'])
+# api_manager.create_api(Match, methods=['GET'])
+# api_manager.create_api(Offer, methods=['GET', 'POST'])

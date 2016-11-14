@@ -14,9 +14,10 @@
 
 <body ng-app="myApp" ng-controller="myCtrl">
 	<p>Please wait while we match you with another user,<br>we can't continue until all users are ready...<br>
-		<progress max="{{ NUMBER_OF_USERS }}" style="width: 250px; height: 20px;" ng-value="prog"></progress><span style="position: absolute; left: 0; width: 100%;"><b style="line-height: 20px" ng-bind="prog_int + '%'"></b></span><br>
-		<span ng-bind="'(' + prog + ' out of {{ NUMBER_OF_USERS }} users ready)'"></span></p>
+		<progress max="{{ EXPERIMENT_SETTS.NUMBER_OF_USERS }}" style="width: 250px; height: 20px;" ng-value="prog"></progress><span style="position: absolute; left: 0; width: 100%;"><b style="line-height: 20px" ng-bind="prog_int + '%'"></b></span><br>
+		<span ng-bind="'(' + prog + ' out of {{ EXPERIMENT_SETTS.NUMBER_OF_USERS }} users ready)'"></span></p>
 	<p><img src="{{ url_for('static', filename='images/loading_spinner.gif') }}" loop="infinite" alt="" width="32" height="32" title="Waiting for a match... Please wait :)"/></p>
+	{{ generate_quit_div()|safe }}
 	<script language="javascript">
 		var app = angular.module('myApp', []);
 		app.controller('myCtrl', function($scope, $http, $timeout) {
@@ -26,7 +27,7 @@
 			(function poll_server() {
 				$http.get('/wait_cnt').then(function successCallback(response) {
 					$scope.prog = parseInt(response.data);
-					$scope.prog_int = parseInt(100*$scope.prog/{{ NUMBER_OF_USERS }});
+					$scope.prog_int = parseInt(100*$scope.prog/{{ EXPERIMENT_SETTS.NUMBER_OF_USERS }});
 				}, null /* No error handler */);
 				$http.get('/user_state').then(function successCallback(response) {
 					if (response.data != "{{ States.wait.value }}") {

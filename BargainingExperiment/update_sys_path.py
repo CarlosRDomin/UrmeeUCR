@@ -1,11 +1,11 @@
-'''
+"""
 This script fixes the following problem. When run_server.py is executed, sys.path is initialized to contain its parent
 folder (BargainingExperiment). This means that when we try to import any modules from the package BargainingExperiment,
 Python throws an ImportError exception.
 
 Instead, we need BargainingExperiment's parent folder to be included in sys.path, such that package BargainingExperiment
 can be found and imported.
-'''
+"""
 
 import sys
 import os

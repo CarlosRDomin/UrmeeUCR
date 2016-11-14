@@ -1,6 +1,6 @@
 html {
 	background: transparent url(../images/bg-main.gif) repeat 0 0;
-	height: 100%; }
+	height: 95%;	/* 100% causes a vertical scroll bar to appear */ }
 
 body {
 	width: 800px;
@@ -28,25 +28,29 @@ p {
 	line-height: 1em; }
 
 progress[value] {
-	-webkit-appearance: none;
-}
+	-webkit-appearance: none; }
 
 progress[value]::-webkit-progress-inner-element {
 	background-color: #484848;
 	border-radius: 9px;
-	padding: 1px;
-}
+	padding: 1px; }
 
 progress[value]::-webkit-progress-bar {
 	background-color: whitesmoke;
 	border-radius: 8px;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
-}
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset; }
 
 progress[value]::-webkit-progress-value {
 	background: #c0c0c0;
-	border-radius: 8px;
-}
+	border-radius: 8px; }
+
+.quit_div {
+	position: fixed;
+	bottom: 0;
+	width: 800px;
+	height: 40px;
+	text-align: right;
+	vertical-align: bottom; }
 
 /*h1 {
 	text-shadow: #fff 1px 1px;

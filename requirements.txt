@@ -11,8 +11,8 @@ mimerender==0.6.0
 mysql==0.0.1
 MySQL-python==1.2.5
 python-dateutil==2.5.3
-python-mimeparse==1.5.2
+python-mimeparse==1.5.5
 six==1.10.0
-SQLAlchemy==1.0.13
+SQLAlchemy==1.1.1
 SQLAlchemy-Enum34==1.0.1
-Werkzeug==0.11.10
+Werkzeug==0.11.11

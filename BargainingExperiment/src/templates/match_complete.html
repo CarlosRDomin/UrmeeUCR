@@ -10,7 +10,7 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 
-{% set final_offer = role.match.offers[1].offer_value %}
+{% set final_offer = min(role.match.offers[0].offer_value, role.match.offers[1].offer_value) %}
 {% if role.is_seller %}
 	{% set profit = final_offer - role.valuation %}
 {% else %}
@@ -26,6 +26,7 @@
 		{% endif %}
 	</p>
 	<p>When you're ready for your next match,<br><a href="javascript: complete_match()"><b>click here</b> to wait for a new opponent.</a></p>
+	{{ generate_quit_div()|safe }}
 	<script>
 		function complete_match() {
 			var form = document.createElement("form");
