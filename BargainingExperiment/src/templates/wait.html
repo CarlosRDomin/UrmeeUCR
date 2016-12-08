@@ -18,6 +18,7 @@
 		<span ng-bind="'(' + prog + ' out of {{ EXPERIMENT_SETTS.NUMBER_OF_USERS }} users ready)'"></span></p>
 	<p><img src="{{ url_for('static', filename='images/loading_spinner.gif') }}" loop="infinite" alt="" width="32" height="32" title="Waiting for a match... Please wait :)"/></p>
 	{{ generate_quit_div()|safe }}
+
 	<script language="javascript">
 		var app = angular.module('myApp', []);
 		app.controller('myCtrl', function($scope, $http, $timeout) {
@@ -31,7 +32,7 @@
 				}, null /* No error handler */);
 				$http.get('/user_state').then(function successCallback(response) {
 					if (response.data != "{{ States.wait.value }}") {
-						window.location = window.location.href;
+						window.location = window.location.href;	// Refresh page if current state is not 'wait'
 					}
 				}, null /* No error handler */);
 				$timeout(poll_server, {{ POLL_REFRESH_RATE }});	// Keep polling every POLL_REFRESH_RATE ms

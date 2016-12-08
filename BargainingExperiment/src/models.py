@@ -44,7 +44,7 @@ class User(db.Model):
 	experiment_day = db.Column(db.Integer, nullable=False)
 	ip = db.Column(db.String(15), nullable=False)
 	state = db.Column(EnumType(States), nullable=False, default=States.login)
-	roles = db.relationship("Role", backref=db.backref("user", uselist=False), lazy='dynamic', order_by="Role.role_date.desc()", uselist=True)
+	roles = db.relationship("Role", backref=db.backref("user", uselist=False), lazy='dynamic', order_by="Role.id.desc()", uselist=True)
 	db.Index("unique_user_id", experiment_day, ip, unique=True)
 
 	COMPUTER_IP = "Computer"
@@ -74,7 +74,7 @@ class Role(db.Model):
 	starts_first = db.Column(db.Boolean, nullable=False)
 	is_seller = db.Column(db.Boolean, nullable=False)
 	valuation = db.Column(db.Float, nullable=False)
-	offers = db.relationship("Offer", backref=db.backref("role", uselist=False), order_by="Offer.offer_date.desc()", uselist=True)
+	offers = db.relationship("Offer", backref=db.backref("role", uselist=False), order_by="Offer.id.desc()", uselist=True)
 	db.Index("user_idx", user_id)
 
 	def __init__(self, user_id, starts_first=None, is_seller=None, valuation=0, role_date=None):
@@ -95,13 +95,11 @@ class Match(db.Model):
 	role_1_id = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False, unique=True, index=True)
 	role_2_id = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False, unique=True, index=True)
 	roles = db.relationship("Role", backref=db.backref("match", uselist=False), primaryjoin=db.or_(Role.id==role_1_id, Role.id==role_2_id), uselist=True)
-	offers = db.relationship("Offer", backref=db.backref("match", uselist=False), order_by="Offer.offer_date.desc()", uselist=True)
+	offers = db.relationship("Offer", backref=db.backref("match", uselist=False), order_by="Offer.id.desc()", uselist=True)
 	completed = db.Column(db.Boolean, nullable=False)
 	db.Index("match_date_idx", match_date)
 	db.Index("completed_idx", completed)
 	# db.Index("role_match_ids", role_1_id, role_2_id)
-	# db.Index("role_1_idx", role_1_id)
-	# db.Index("role_2_idx", role_2_id)
 
 	def __init__(self, role_1_id, role_2_id, match_date=None, completed=False):
 		self.role_1_id = role_1_id

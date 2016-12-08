@@ -13,23 +13,22 @@
 </head>
 
 <body ng-app="myApp" ng-controller="myCtrl">
-
     <p id="task_description">
-        {% if role.is_seller %}   You're trying to <b>sell</b> an item that you value in <b>${{ role.valuation }}</b>.<br><br>At the end of the experiment you'll get paid proportionally to the difference<br>between the price you agree on and the value of this item.<br><br>For every round that passes without reaching an agreement,<br>a multiplicative fee of {{ EXPERIMENT_SETTS.INTEREST_PER_ROUND }}% will be deducted from your potential profit.
-        {% else %}              You're trying to <b>buy</b> an item that you value in <b>${{ role.valuation }}</b>.<br><br>At the end of the experiment you'll get paid proportionally to the difference<br>between the value of this item and the price you agree on.<br><br>For every round that passes without reaching an agreement,<br>a multiplicative fee of {{ EXPERIMENT_SETTS.INTEREST_PER_ROUND }}% will be deducted from your potential profit.
+        {% if role.is_seller %} You're trying to <b>sell</b> an item that you value in <b>${{ role.valuation }}</b>.<br><br>At the end of the experiment you'll get paid proportionally to the difference<br>between the price you agree on and the value of this item.<br><br>For every round that passes without reaching an agreement,<br>a multiplicative fee of {{ (100*EXPERIMENT_SETTS.INTEREST_PER_ROUND)|int }}% will be deducted from your potential profit.
+        {% else %}              You're trying to <b>buy</b>  an item that you value in <b>${{ role.valuation }}</b>.<br><br>At the end of the experiment you'll get paid proportionally to the difference<br>between the value of this item and the price you agree on.<br><br>For every round that passes without reaching an agreement,<br>a multiplicative fee of {{ (100*EXPERIMENT_SETTS.INTEREST_PER_ROUND)|int }}% will be deducted from your potential profit.
         {% endif %}
     </p>
 
 	<form method="POST" action="" target="_self">
 		<div>
 			<div ng-show="{{ get_condition_show_waiting_for_offer(role) }}">
-				<p ng-show="negotiation_round == 0">Your opponent has been randomly selected to make the first offer.<br>Please wait until their initial offer is received.</p>
-				<p ng-show="negotiation_round > 0">Your opponent has received your offer.<br>Please wait until they reply.</p>
+				<p ng-show="num_offers == 0">Your opponent has been selected to make the first offer.<br>Please wait until their initial offer is received.</p>
+				<p ng-show="num_offers > 0">Your opponent has received your {{ print_new_or_counter(role.starts_first) }}offer.<br>Please wait until they reply with a {{ print_new_or_counter(not role.starts_first) }}offer.</p>
 				<p><img src="{{ url_for('static', filename='images/loading_spinner.gif') }}" loop="infinite" alt="" width="32" height="32" title="Waiting for an offer... Please wait :)"/></p>
 			</div>
 			<div ng-show="!{{ get_condition_show_waiting_for_offer(role) }}">
-				<p id="offer_in_description" ng-show="negotiation_round == 0">You've been randomly selected to make the first offer!</p>
-				<p id="offer_in_description" ng-show="negotiation_round > 0">Your opponent sent you a new offer! They're willing to {% if role.is_seller %}buy{% else %}sell{% endif %} for <b ng-bind="'$' + offer_in"></b>.</p>
+				<p id="offer_in_description" ng-show="num_offers == 0">You've been selected to make the first offer!</p>
+				<p id="offer_in_description" ng-show="num_offers > 0">Your opponent sent you a {{ print_new_or_counter(not role.starts_first) }}offer! They {% if role.starts_first %}were{% else %}are{% endif %} willing to {% if role.is_seller %}buy{% else %}sell{% endif %} for <b ng-bind="'$' + offer_in"></b>.</p>
 				<p>How much do you want to offer?<br>
 				<table width="600" border="1" align="center">
 					<tr>
@@ -44,38 +43,49 @@
 						<td colspan="2" width="100%"><p id="profit_explanation"></p></td>
 					</tr>
 				</table>
-				<input type="submit" title="Submit offer" value="Submit offer" id="submit_offer" ng-disabled="{{ get_condition_show_waiting_for_offer(role) }}" ng-click="negotiation_round++">
+				<input type="submit" title="Submit offer" value="Submit offer" id="submit_offer" ng-disabled="{{ get_condition_show_waiting_for_offer(role) }}" ng-click="num_offers++; poll_server()">
 				</p>
 			</div>
 		</div>
 	</form>
 	{{ generate_quit_div()|safe }}
-{#	<iframe name="iframe_background" src="offer_progress" width="0" height="0" scrolling="no" style="visibility: hidden; display: none" seamless="seamless"></iframe>#}
 
     <script language="javascript">
         function update_profit_explanation(event) {
-			document.getElementById("profit_explanation").innerHTML = "If the deal is closed at $" + ((this.id.indexOf("low")>=0)? "{{ EXPERIMENT_SETTS.VALUATION_SET[BUYER_LOW] }}":"{{ EXPERIMENT_SETTS.VALUATION_SET[SELLER_HIGH] }}") + ", you would be making $XX.XX";
+            var deal_price = (this.id.indexOf("low")>=0)? {{ EXPERIMENT_SETTS.VALUATION_SET[BUYER_LOW] }}:{{ EXPERIMENT_SETTS.VALUATION_SET[SELLER_HIGH] }};
+            var discount = Math.pow(1-{{ EXPERIMENT_SETTS.INTEREST_PER_ROUND }}, Math.floor(angular_scope.num_offers/2.));
+            var profit = Math.max(0, (deal_price-{{ role.valuation }})*discount*Math.pow(-1, {{ (not role.is_seller)|int }}));
+			document.getElementById("profit_explanation").innerHTML = "If the deal is closed at $" + deal_price + ", you would be making $" + parseFloat(profit).toFixed(2) + " (" + parseFloat(100*discount).toFixed(2) + "% of the total profit)";
         }
+
+		function select_offer_option(index) {
+		    document.getElementsByName("offer_option")[index].checked = true;
+			document.getElementsByName("offer_option")[index].onchange();
+		}
 
         for (var i=0; i<document.getElementsByName("offer_option").length; i++) {
 			document.getElementsByName("offer_option")[i].onchange = update_profit_explanation;
 		}
-		document.getElementsByName("offer_option")[0].onchange();	// Force a call to update_profit_explanation
 
         var app = angular.module('myApp', []);
-        app.controller('myCtrl', function($scope, $http, $timeout) {
-			$scope.negotiation_round = {{ role.match.offers|length }};
+        app.controller('myCtrl', function($scope, $http, $timeout, $window) {
+			$scope.num_offers = {{ role.match.offers|length }};
 			$scope.offer_in = null;
 			$scope.completed = false;
+			$window.angular_scope = $scope;	// Workaround so JS functions can access AngularJS scope
+			select_offer_option({{ role.is_seller|int }});	// Now that num_offers has been defined, force a call to update_profit_explanation to update profit explanation based on initial selected radio button option
 
 			(function poll_server() {
 				$http.get('/last_offer_info').then(function successCallback(response) {
 					$scope.completed = response.data.completed;
 					if ($scope.completed) {
-						window.location = "";
+						window.location = window.location.href;	// Refresh page if match is completed (so it redirects to match_completed.html)
 					} else {	// Don't load more parameters if match is completed (otherwise it would show the form to make a new offer for a split second and quickly redirect to match_completed.html, which doesn't look good)
-						$scope.negotiation_round = response.data.count;
+						var bool_new_offer = ($scope.num_offers != response.data.count);	// Detect if a new offer has been submitted
+						$scope.num_offers = response.data.count;
 						$scope.offer_in = response.data.offer;
+						if (bool_new_offer)	// If a new offer has been submitted, select the most convenient option for the user (lowest bid if buyer, highest if seller) and update profit explanation
+						    select_offer_option({{ role.is_seller|int }});
 					}
 				}, null /* No error handler */);
 				$timeout(poll_server, {{ POLL_REFRESH_RATE }});	// Keep polling every POLL_REFRESH_RATE ms

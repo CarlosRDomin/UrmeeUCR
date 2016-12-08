@@ -6,11 +6,19 @@ def get_offer_range(is_seller, valuation):
 
 
 def get_condition_show_waiting_for_offer(role):
-	return u'((negotiation_round+{:d})%2 == 0)'.format(role.starts_first)
+	return u'((num_offers+{:d})%2 == 0)'.format(role.starts_first)
 
 
 def min(x, y):
 	return x if x < y else y
+
+
+def max(x, y):
+	return x if x > y else y
+
+
+def print_new_or_counter(bool_new):
+	return u'new ' if bool_new else u'counter-'
 
 
 def generate_quit_div():

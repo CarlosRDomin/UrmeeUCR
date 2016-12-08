@@ -16,9 +16,12 @@
 			Thank you for participating!
 		</p>
 	{% else %}
-		<p>This is the end of the experiment, thank you for participating!<br>
-			<strong>Congratulations</strong>, you earned <strong>$XX.XX</strong>! :)
-		</p>
+		<p>This is the end of the experiment, thank you for participating!</p>
+	{% endif %}
+	{% if profit > 0 %}
+		<p><strong>Congratulations</strong>, you earned <strong>${{ '%0.2f' % profit|float }}</strong>! :)</p>
+	{% else %}
+		</p><strong>Sorry</strong>, you weren't able to make any profit during the experiment :(</p>
 	{% endif %}
 </body>
 </html>

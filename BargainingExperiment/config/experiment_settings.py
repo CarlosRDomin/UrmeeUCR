@@ -7,9 +7,9 @@ It's a number, eg: 32 users.
 NUMBER_OF_USERS = 2
 
 """
-SESSION_ORDER indicates how the matchings will be generated (play against the computer first, or play against other users first, how many rounds against the computer, etc.).
+SESSION_ORDER indicates how the matchings will be generated (play against the computer first, or play against other users first, how many matches against the computer, etc.).
 It's a list surrounded by square braquets "[]", and each item of the list is surrounded by parenthesis "()".
-Inside the parenthesis, go two things, separated by a comma ",":
+Inside the parenthesis, have two things, separated by a comma ",":
  (1) Who they'll be matched against: either the word "COMPUTER" or the word "USERS" (in CAPS LETTERS)
  (2) How many matches they'll play: a number (eg: 10, meaning 10 matches).
      Note that you can also use previous variables, like NUMBER_OF_USERS (so NUMBER_OF_USERS/2 would match each seller with every buyer once, for the USERS round)
@@ -57,4 +57,4 @@ MAX_ROUNDS = 10
 INTEREST_PER_ROUND indicates how much of their potential earnings users lose after each round without agreeing on a price.
 It's a decimal number representing a percentage, eg: 0.05 means 5%, 0.12 means 12% and so on, so it needs to be between 0 and 1.
 """
-INTEREST_PER_ROUND = 0.05
+INTEREST_PER_ROUND = 0.10

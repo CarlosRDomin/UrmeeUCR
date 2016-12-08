@@ -10,23 +10,19 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 
-{% set final_offer = min(role.match.offers[0].offer_value, role.match.offers[1].offer_value) %}
-{% if role.is_seller %}
-	{% set profit = final_offer - role.valuation %}
-{% else %}
-	{% set profit = role.valuation - final_offer %}
-{% endif %}
-
 <body>
-	<p>You and your opponent agreed on a price of ${{ final_offer }}!<br>
+	<p>You and your opponent closed the deal on a price of ${{ '%0.2f' % deal_price|float }} after {{ num_rounds }} negotiation round{% if num_rounds!=1 %}s{% endif %}.<br>
+		This means you earn {{ '%0.2f' % (100*discount|float) }}% of the trade profit.<br>
+		Because you valued the item you {% if role.is_seller %}sold{% else %}bought{% endif %} at ${{ '%0.2f' % role.valuation|float }},<br>
 		{% if profit > 0 %}
-			<strong>Congratulations</strong>, you earned <strong>${{profit}}</strong>! :)
+			<strong>Congratulations</strong>, you earned <strong>${{ '%0.2f' % profit|float }}</strong>! :)
 		{% else %}
 			<strong>Sorry</strong>, you weren't able to make any profit this match :(
 		{% endif %}
 	</p>
 	<p>When you're ready for your next match,<br><a href="javascript: complete_match()"><b>click here</b> to wait for a new opponent.</a></p>
 	{{ generate_quit_div()|safe }}
+
 	<script>
 		function complete_match() {
 			var form = document.createElement("form");
